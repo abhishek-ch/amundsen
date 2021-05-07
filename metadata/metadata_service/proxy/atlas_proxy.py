@@ -244,7 +244,7 @@ class AtlasProxy(BaseProxy):
         return user_details
 
     @classmethod
-    def _filter_active(cls, entities: List[dict]) -> Optional[List[dict]]:
+    def _filter_active(cls, entities: List[dict]) -> List[dict]:
         """
         Filter out active entities based on entity end relationship status.
         """
@@ -298,7 +298,7 @@ class AtlasProxy(BaseProxy):
 
         bookmark_entity = {
             'entity': {
-                'typeName': CommonTypes.Bookmark,
+                'typeName': CommonTypes.bookmark,
                 'attributes': {'qualifiedName': bookmark_qn,
                                Status.ACTIVE.lower(): True,
                                'entityUri': table_uri,
@@ -326,7 +326,7 @@ class AtlasProxy(BaseProxy):
                                                        table_info.get('cluster'))
 
         try:
-            bookmark_entity = self.client.entity.get_entity_by_attribute(type_name=CommonTypes.Bookmark,
+            bookmark_entity = self.client.entity.get_entity_by_attribute(type_name=CommonTypes.bookmark,
                                                                          uniq_attributes=[(CommonKeys.qn, bookmark_qn)])
         except Exception as ex:
             LOGGER.exception(f'Bookmark not found. {str(ex)}')
@@ -338,7 +338,7 @@ class AtlasProxy(BaseProxy):
             self._create_bookmark(table_entity,
                                   user_entity.entity[CommonKeys.guid], bookmark_qn, entity_uri)
             # Fetch bookmark entity after creating it.
-            bookmark_entity = self.client.entity.get_entity_by_attribute(type_name=CommonTypes.Bookmark,
+            bookmark_entity = self.client.entity.get_entity_by_attribute(type_name=CommonTypes.bookmark,
                                                                          uniq_attributes=[(CommonKeys.qn, bookmark_qn)])
 
         return bookmark_entity
@@ -512,7 +512,7 @@ class AtlasProxy(BaseProxy):
         meanings = self._filter_active(entity.get(CommonKeys.rels, dict()).get('meanings', []))
 
         for term in meanings or list():
-            result.append(Tag(tag_name=term.get('displayText'), tag_type='default'))
+            result.append(Tag(tag_name=term.get('displayText', ''), tag_type='default'))
 
         return result
 
@@ -985,7 +985,7 @@ class AtlasProxy(BaseProxy):
         :return: A list of PopularTable, DashboardSummary or any other resource.
         """
         params = {
-            'typeName': CommonTypes.Bookmark,
+            'typeName': CommonTypes.bookmark,
             'offset': '0',
             'limit': '1000',
             'excludeDeletedEntities': True,
@@ -1024,7 +1024,7 @@ class AtlasProxy(BaseProxy):
                 # @todo finish this
                 pass
             else:
-                raise NotImplemented('resource type {} is not supported'.format(resource_type))
+                raise NotImplementedError('resource type {} is not supported'.format(resource_type))
         return resources
 
     def _get_resources_owned_by_user(self, user_id: str, resource_type: str) \
@@ -1045,8 +1045,7 @@ class AtlasProxy(BaseProxy):
             type_regex = 'Dashboard'
             entity_type = DashboardTypes.metadata
         else:
-            LOGGER.exception(f'Resource Type ({resource_type}) is not yet implemented')
-            raise NotImplemented
+            raise NotImplementedError(f'Resource Type ({resource_type}) is not yet implemented')
 
         user_entity = self.client.entity.get_entity_by_attribute(type_name=CommonTypes.user,
                                                                  uniq_attributes=[(CommonKeys.qn, user_id)]).entity
@@ -1163,7 +1162,7 @@ class AtlasProxy(BaseProxy):
                                       resource_type: ResourceType) -> None:
 
         if resource_type is not ResourceType.Table:
-            raise NotImplemented('resource type {} is not supported'.format(resource_type))
+            raise NotImplementedError('resource type {} is not supported'.format(resource_type))
 
         entity = self._get_bookmark_entity(entity_uri=id, user_id=user_id)
         entity.entity[CommonKeys.attrs][Status.ACTIVE.lower()] = True
@@ -1175,7 +1174,7 @@ class AtlasProxy(BaseProxy):
                                          relation_type: UserResourceRel,
                                          resource_type: ResourceType) -> None:
         if resource_type is not ResourceType.Table:
-            raise NotImplemented('resource type {} is not supported'.format(resource_type))
+            raise NotImplementedError('resource type {} is not supported'.format(resource_type))
 
         entity = self._get_bookmark_entity(entity_uri=id, user_id=user_id)
         entity.entity[CommonKeys.attrs][Status.ACTIVE.lower()] = False
